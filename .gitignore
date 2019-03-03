@@ -1,0 +1,11 @@
+# Temporary files.
+*~
+
+# Build artifacts.
+build
+devel
+install
+logs
+dependencies
+.catkin_workspace
+.catkin_tools
