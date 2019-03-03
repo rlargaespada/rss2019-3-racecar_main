@@ -1,5 +1,12 @@
 #!/usr/bin/env python2
 
+"""
+    RSS 2019 | Combined Pure Pursuit and Proportional controller with spatial
+    derivative for corner prediction.
+
+    Authors: Kyel Morgenstein, Abbie Lee
+"""
+
 import numpy as np
 
 import rospy
@@ -21,7 +28,7 @@ class WallFollower:
 	SIDE = rospy.get_param("wall_follower/side")
 	VELOCITY = rospy.get_param("wall_follower/velocity")
 	DESIRED_DISTANCE = rospy.get_param("wall_follower/desired_distance")
-	
+
 
 	def __init__(self):
 		# TODO:
@@ -37,14 +44,14 @@ class WallFollower:
 	# Write your callback functions here.
 	def callback(self,data):
 		A = AckermannDriveStamped()
-		
+
 		#get laser scan data
 		dat = data.ranges #list of distances from laser scanner
 		angs = self.a_trans(data) #make list of angles from min to max
 
 		r,th = self.data_split(dat,angs) #split data into polar coordinates (radius, theta)
 		x,y = self.pol2cart(r,th) #transform coordinates to cartesian (x,y)
-	
+
 		if len(x)==0:
 			#sets drive conditions if robot out of range
 			A.drive.steering_angle = 0 #sets steering angle [rad]
@@ -53,7 +60,7 @@ class WallFollower:
 
 		m,b = np.polyfit(x,y,1) #fit linear regression line to data
 
-		
+
 		mark = self.make_marker(m,b,x) #generate marker message
 		self.pub_line.publish(mark) #publish marker
 
@@ -73,17 +80,17 @@ class WallFollower:
 		#combined proportional-pure persuit controller with Ackermann steering
 		L = .324 #length of wheel base [m]
 		a = np.arctan(m) #angle between velocity vector and desired path [rad]
-		l = .5*self.VELOCITY #looh ahead dist [m]
+		l = .4*self.VELOCITY #look ahead dist [m]
 		u_pp = self.SIDE*np.arctan(2*L*np.sin(a)/l) #control input to exactly match wall angle [rad]
-		
+
 
 		dist=np.amin(np.sqrt(x**2+(m*x+b)**2)) #perpenducular dist between car and closest point on wall [m]
 		err = dist-self.DESIRED_DISTANCE #error from desired path [m]
 
-		kp = 1.5 #proportional constant
+		kp = 2 #proportional constant
 		u_p = kp*err #control input to maintain desired distance from wall [rad]
 
-		u = u_pp + u_p #total control input [rad]
+		u = u_pp + u_p + self.SIDE * .7* np.arctan(m) #total control input [rad]
 
 		return u
 
@@ -102,7 +109,7 @@ class WallFollower:
 					if -stop_angle<=angs[n]<=start_angle:
 						a.append(angs[n])
 						d.append(dat[n])
-				
+
 				else:
 					#right wall
 					if -start_angle<=angs[n]<=stop_angle:
@@ -153,7 +160,7 @@ class WallFollower:
 		m.color.a=1
 		m.points=[p1,p2]
 		return m
-		
+
 
 
 
