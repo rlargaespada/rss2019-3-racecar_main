@@ -65,7 +65,7 @@ class WallFollower:
         self.track_iteration += 1
         if self.stop:
             self.pub.publish(self.out)
-        self.decide_stop()
+        # self.decide_stop()
 
     def create_message(self, v):
         """create optput AckermannDriveStamped mssage
