@@ -4,7 +4,7 @@
     RSS 2019 | Combined Pure Pursuit and Proportional controller with spatial
     derivative for corner prediction.
 
-    Authors: Kyel Morgenstein, Abbie Lee
+    Authors: Kyle Morgenstein, Abbie Lee
 """
 
 import numpy as np
@@ -90,7 +90,7 @@ class WallFollower:
 		kp = 2 #proportional constant
 		u_p = kp*err #control input to maintain desired distance from wall [rad]
 
-		u = u_pp + u_p + self.SIDE * .7* np.arctan(m) #total control input [rad]
+		u = u_pp + u_p - self.SIDE * 0.5 * np.arctan(m) #total control input [rad]
 
 		return u
 
@@ -99,7 +99,7 @@ class WallFollower:
 		#start/stop angles and max range are parameterized
 		d = []
 		a = []
-		stop_angle = np.pi/8 #past-vertical ray
+		stop_angle = -np.pi/8 #np.pi/8 #past-vertical ray
 		start_angle = np.pi/2 #horizontal starting ray
 		max_r = 3.5 #farthest distance to collect
 		for n in range(len(dat)):
