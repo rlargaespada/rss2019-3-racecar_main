@@ -38,6 +38,7 @@ class WallFollower:
 		self.pub = rospy.Publisher(self.DRIVE_TOPIC,AckermannDriveStamped, queue_size=10)
 		self.pub_line = rospy.Publisher("marker",Marker,queue_size=10)
 		self.rate = 50 #laser scan messages rate [hz]
+        self.gains = {"Kp": 2, "Convex": -0.5, "Concave": 0.7}
 
 
 	# TODO:
@@ -87,10 +88,15 @@ class WallFollower:
 		dist=np.amin(np.sqrt(x**2+(m*x+b)**2)) #perpenducular dist between car and closest point on wall [m]
 		err = dist-self.DESIRED_DISTANCE #error from desired path [m]
 
-		kp = 2 #proportional constant
+		kp = self.gains["Kp"] #proportional constant
 		u_p = kp*err #control input to maintain desired distance from wall [rad]
 
-		u = u_pp + u_p - self.SIDE * 0.5 * np.arctan(m) #total control input [rad]
+        if a < 0:
+            u_wall = self.SIDE * self.gains["Concave"] * a
+        else:
+            u_wall = self.SIDE * self.gains["Convex"] * a
+
+		u = u_pp + u_p + u_wall  # total control input [rad]
 
 		return u
 
