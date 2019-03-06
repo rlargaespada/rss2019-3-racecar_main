@@ -4,7 +4,7 @@ import numpy as np
 import math
 import rospy
 import scipy
-from sklearn.metrics import mean_squared_error
+# from sklearn.metrics import mean_squared_error
 from rospy.numpy_msg import numpy_msg
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
