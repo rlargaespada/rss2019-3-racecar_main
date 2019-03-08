@@ -17,6 +17,7 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 import numpy as np
 import warnings
+from std_msgs import Float32
 warnings.simplefilter('ignore', np.RankWarning)
 
 class WallFollower:
@@ -37,6 +38,7 @@ class WallFollower:
 		self.sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.callback, queue_size=10)
 		self.pub = rospy.Publisher(self.DRIVE_TOPIC,AckermannDriveStamped, queue_size=10)
 		self.pub_line = rospy.Publisher("marker",Marker,queue_size=10)
+		self.pub_error = rospy.Publisher("error",Float32,queue_size=10)
 		self.rate = 50 #laser scan messages rate [hz]
 
 
@@ -86,7 +88,7 @@ class WallFollower:
 
 		dist=np.amin(np.sqrt(x**2+(m*x+b)**2)) #perpenducular dist between car and closest point on wall [m]
 		err = dist-self.DESIRED_DISTANCE #error from desired path [m]
-
+		self.pub_error.publish(err)
 		kp = 2 #proportional constant
 		u_p = kp*err #control input to maintain desired distance from wall [rad]
 
