@@ -50,7 +50,7 @@ class WallFollower:
         # self.decide_stop()
 
     def create_message(self, v, ang):
-        """create optput AckermannDriveStamped mssage
+        """create optput AckermannDriveStamped message
         """
         self.out.header.stamp = rospy.Time.now()
         self.out.header.frame_id = "1"
@@ -59,14 +59,12 @@ class WallFollower:
         self.out.drive.speed = v
         self.out.drive.acceleration = 0
         self.out.drive.jerk = 0
-
-
     
     def check_crash(self, distances, angles):
         #Iterate through average changes, check if change indicates that next position would be in wall
         minimum = np.argmin(distances)
         # x, y = self.pol_to_cart(distances[minimum], angles[minimum])
-        while self.pol_to_cart(self.data[minimum], self.angs[minimum])[0] < self.input_speed*.33 and abs(self.pol_to_cart(self.data[minimum], self.angs[minimum])[1]) < .2:
+        while self.pol_to_cart(self.data[minimum], self.angs[minimum])[0] < max(1., self.input_speed*.4)*2 and abs(self.pol_to_cart(self.data[minimum], self.angs[minimum])[1]) < .2:
             print(distances[minimum])
             rate = rospy.Rate(20)
             # print(j)
@@ -78,15 +76,27 @@ class WallFollower:
                 self.pub.publish(self.out)
                 rate.sleep()
 
+    def get_clearance(self, scan, dist):
+        """
+        Input: scan: np array of laser scan distances
+               dist: threshold distance
+        Output: clearance: proportion (between 0 and 1) of scans in sect that
+                           are greater than the threshold distance
+        """
+        filtered = scan[scan > dist]
+        clearance = float(len(filtered))/len(scan)
+
+        return clearance
+
 
     def a_trans(self,data):
-	#returns [list] of angles within range
-	amin = data.angle_min #min angle [rad]
-	amax = data.angle_max #max angle [rad]
-	ainc = data.angle_increment #min angle increment [rad]
-	angs = [amin]
-	for i in range(len(data.ranges)):
-		angs.append(angs[i]+ainc)
+	# returns [list] of angles within range
+    	amin = data.angle_min # min angle [rad]
+    	amax = data.angle_max # max angle [rad]
+    	ainc = data.angle_increment # min angle increment [rad]
+    	angs = [amin]
+    	for i in range(len(data.ranges)):
+    		angs.append(angs[i]+ainc)
         return angs
 
     def drive_callback(self, data):
@@ -95,7 +105,6 @@ class WallFollower:
         #Check for a crash at each of the regions 
         self.check_crash(self.data, self.angs)
         #Iterate and publish
-
         self.track_iteration += 1
         self.create_message(self.input_speed, self.input_ang)
         self.pub.publish(self.out)
@@ -103,8 +112,6 @@ class WallFollower:
     def pol_to_cart(self, r, th):
         #Convert a polar point to cartesian point
         return r*np.cos(th), r*np.sin(th)
-
-
 
 if __name__ == "__main__":
     rospy.init_node('safety_controller')
