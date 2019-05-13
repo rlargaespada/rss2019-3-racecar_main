@@ -62,17 +62,24 @@ class WallFollower:
     
     def check_crash(self, distances, angles):
         #Iterate through average changes, check if change indicates that next position would be in wall
-        minimum = np.argmin(distances)
+        threshold_dist_x = max(1., self.input_speed*.4)*2
+        threshold_dist_y = 0.2
+        threshold_dist = np.sqrt(threshold_dist_x**2 + threshold_dist_y**2)
+        clearance_data = self.data[self.center/2: self.center*1.5]
+        clearance = self.get_clearance(clearance_data, threshold_dist)
+        clearance_threshold = 0.1
+        #minimum = np.argmin(distances)
         # x, y = self.pol_to_cart(distances[minimum], angles[minimum])
-        while self.pol_to_cart(self.data[minimum], self.angs[minimum])[0] < max(1., self.input_speed*.4)*2 and abs(self.pol_to_cart(self.data[minimum], self.angs[minimum])[1]) < .2:
-            print(distances[minimum])
+        #while self.pol_to_cart(self.data[minimum], self.angs[minimum])[0] < max(1., self.input_speed*.4)*2 and abs(self.pol_to_cart(self.data[minimum], self.angs[minimum])[1]) < .2:
+        if clearance < clearance_threshold:
+            print('clearance threshold not met, clearance = ', clearance)
             rate = rospy.Rate(20)
             # print(j)
             for i in range(1):
-                if angles[minimum] < 0:
-                    self.create_message(min(self.input_speed, 2), 0.34)
-                else:
-                    self.create_message(min(self.input_speed, 2),-0.34)
+                #if angles[minimum] < 0: self.create_message(min(self.input_speed, 2), 0.34)
+                self.create_message(0, 0)
+                # else:
+                #     self.create_message(min(self.input_speed, 2),-0.34)
                 self.pub.publish(self.out)
                 rate.sleep()
 
@@ -90,13 +97,13 @@ class WallFollower:
 
 
     def a_trans(self,data):
-	# returns [list] of angles within range
-    	amin = data.angle_min # min angle [rad]
-    	amax = data.angle_max # max angle [rad]
-    	ainc = data.angle_increment # min angle increment [rad]
-    	angs = [amin]
-    	for i in range(len(data.ranges)):
-    		angs.append(angs[i]+ainc)
+    # returns [list] of angles within range
+        amin = data.angle_min # min angle [rad]
+        amax = data.angle_max # max angle [rad]
+        ainc = data.angle_increment # min angle increment [rad]
+        angs = [amin]
+        for i in range(len(data.ranges)):
+            angs.append(angs[i]+ainc)
         return angs
 
     def drive_callback(self, data):
